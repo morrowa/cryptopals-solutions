@@ -1,37 +1,27 @@
-use std::error::Error;
-use std::fmt;
-
-use strsim::normalized_levenshtein;
-
-#[derive(Debug, Clone)]
-pub enum StringScoreError {
-    IllegalChars,
-}
-
-impl fmt::Display for StringScoreError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "string contains non-ASCII or unprintable characters")
-    }
-}
-
-impl Error for StringScoreError {}
-
-const SORTED_LETTERS: &'static str = "etaoinsrhdlucmfywgpbvkxqjz";
+// the weight of letters from a to z
+// divide by 10 to get the decimal percentage
+const WEIGHTS: [i16; 26] = [82, 15, 28, 43, 130, 22, 20, 61, 70, 1, 8, 40, 24, 67, 75, 19, 1, 60, 63, 91, 28, 10, 24, 1, 20, 1];
 
 /// Scores the likelihood that a string is English plaintext by computing letter frequency. Only
-/// allows printable ASCII characters (i.e. 32 through 126 inclusive).
-pub fn score_string(text: &str) -> Result<f64, StringScoreError> {
-    if !text.is_ascii() { return Err(StringScoreError::IllegalChars); }
+/// allows printable ASCII characters (i.e. 32 through 126 inclusive). Scores range from 0.0-1.0.
+pub fn score_string(text: &str) -> Option<f64> {
+    if !text.is_ascii() { return None; }
     let lower = text.to_ascii_lowercase();
-    let mut counts: [u16; 256] = [0; 256];
+    let mut counts: [i16; 95] = [0; 95];
     for b in lower.bytes() {
         if b < 32 || b > 126 {
-            return Err(StringScoreError::IllegalChars);
+            return None;
         }
-        counts[b as usize] += 1;
+        counts[(b - 32) as usize] += 1;
     }
-    let mut printable_by_freq: Vec<(u16, char)> = counts[32..127].iter().cloned().enumerate().filter(|(_, x)| *x > 0).map(|(i, x)| (x, (32 + i as u8) as char)).collect();
-    printable_by_freq.sort_by_key(|x| x.0);
-    let ordered_letters: String = printable_by_freq.iter().rev().map(|(_, x)| x ).collect();
-    Ok(normalized_levenshtein(&ordered_letters, SORTED_LETTERS))
+    // convert counts to 10*frequencies
+    for i in 0..95 {
+        counts[i] = (counts[i] * 1000) / text.len() as i16;
+    }
+    // now we want to subtract our fixed weights, then sum the result, then abs(1/x)
+    for i in 0..26 {
+        counts[i + 65] -= WEIGHTS[i];
+    }
+    let sum: i16 = counts.iter().cloned().map(i16::abs).sum();
+    Some(1.0 / (sum + 1) as f64)
 }
