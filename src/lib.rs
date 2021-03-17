@@ -69,3 +69,26 @@ pub fn brute_force_single_byte_xor(ciphertext: &[u8]) -> Vec<BruteForceResult> {
     }
     results
 }
+
+pub fn repeating_key_xor(plaintext: &[u8], key: &[u8]) -> Vec<u8> {
+    assert!(key.len() < plaintext.len());
+    plaintext.iter().zip(key.iter().cycle())
+        .map(|(x, y)| x ^ y)
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use hex_literal::hex;
+
+    const TEST_VEC: &str = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
+    const TEST_KEY: &str = "ICE";
+    const TEST_VEC_CIPHER: [u8; 74] = hex!("0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f");
+    #[test]
+    fn test_repeating_key_xor() {
+        let ciphertext = repeating_key_xor(TEST_VEC.as_bytes(), TEST_KEY.as_bytes());
+        assert_eq!(ciphertext.len(), TEST_VEC_CIPHER.len());
+        assert_eq!(ciphertext, TEST_VEC_CIPHER);
+    }
+}
