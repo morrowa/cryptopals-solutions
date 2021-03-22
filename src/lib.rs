@@ -1,4 +1,8 @@
+pub mod io_utils;
+
 use strsim::normalized_levenshtein;
+use std::fmt::{Display, Formatter};
+use std::fmt;
 
 const SORTED_LETTERS: &str = " etaoinshrdlcumwfgypbvkjxqz";
 
@@ -77,6 +81,30 @@ pub fn repeating_key_xor(plaintext: &[u8], key: &[u8]) -> Vec<u8> {
         .collect()
 }
 
+#[derive(Debug)]
+pub enum HammingError {
+    DifferentLengthArgs,
+}
+
+impl Display for HammingError {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        let text = match self {
+            HammingError::DifferentLengthArgs => "Differing length arguments provided",
+        };
+
+        write!(f, "{}", text)
+    }
+}
+
+pub fn hamming_distance(a: &[u8], b: &[u8]) -> Result<u64, HammingError> {
+    if a.len() != b.len() {
+        return Err(HammingError::DifferentLengthArgs);
+    }
+    let dist = a.iter().zip(b.iter())
+        .fold(0, |a, (x, y)| a + (x ^ y).count_ones() as u64);
+    Ok(dist)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,5 +118,12 @@ mod tests {
         let ciphertext = repeating_key_xor(TEST_VEC.as_bytes(), TEST_KEY.as_bytes());
         assert_eq!(ciphertext.len(), TEST_VEC_CIPHER.len());
         assert_eq!(ciphertext, TEST_VEC_CIPHER);
+    }
+
+    #[test]
+    fn test_hamming() {
+        let a = "this is a test";
+        let b = "wokka wokka!!!";
+        assert_eq!(hamming_distance(a.as_bytes(), b.as_bytes()).unwrap(), 37);
     }
 }
