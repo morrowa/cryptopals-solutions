@@ -1,7 +1,7 @@
 extern crate hex;
 use std::env;
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
 
 use cryptopals::{brute_force_single_byte_xor, BruteForceResult};
 
@@ -15,10 +15,13 @@ fn main() {
     let filename = env::args().next_back().unwrap();
     let file = File::open(filename).expect("could not open file");
     let reader = BufReader::new(file);
-    let mut results: Vec<(usize, BruteForceResult)> = reader.lines().enumerate()
+    let mut results: Vec<(usize, BruteForceResult)> = reader
+        .lines()
+        .enumerate()
         .map(|(no, line)| {
             brute_force_single_byte_xor(&hex::decode(line.unwrap()).unwrap())
-                .into_iter().map(move |r| (no, r))
+                .into_iter()
+                .map(move |r| (no, r))
         })
         .flatten()
         .collect();
@@ -27,6 +30,11 @@ fn main() {
     println!("Top result:");
     let top = results.first().unwrap();
     let r = &top.1;
-    println!("Line {} ({:#x}) ({:.4}) {}", top.0, r.key, r.score, r.plaintext.escape_default());
+    println!(
+        "Line {} ({:#x}) ({:.4}) {}",
+        top.0,
+        r.key,
+        r.score,
+        r.plaintext.escape_default()
+    );
 }
-

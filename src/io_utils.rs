@@ -38,8 +38,8 @@ impl<'a, R: io::Read> io::Read for SkipNewlinesReader<'a, R> {
             for i in 0..to_write.len() {
                 if to_write[i] == 0x0D || to_write[i] == 0x0A {
                     bytes_written += out_buf.write(&to_write[0..i])?;
-                    to_write = &to_write[i+1..];
-                    continue 'outer
+                    to_write = &to_write[i + 1..];
+                    continue 'outer;
                 }
             }
             // if we got here, there was no newline left in our buffer
@@ -63,7 +63,7 @@ mod tests {
         let mut inner = &mut src.as_bytes();
         let mut reader = SkipNewlinesReader::new(&mut inner);
         match reader.read(&mut buf) {
-            Ok(bytes_read) => assert_eq!(src.as_bytes(), buf),
+            Ok(_bytes_read) => assert_eq!(src.as_bytes(), buf),
             Err(_e) => assert!(false),
         };
     }
@@ -81,8 +81,11 @@ mod tests {
         match reader.read(&mut buf) {
             Ok(bytes_read) => {
                 assert_eq!(bytes_read, MIDDLE_NEWLINE_SKIPPED.len());
-                assert_eq!(&buf[0..MIDDLE_NEWLINE_SKIPPED.len()], MIDDLE_NEWLINE_SKIPPED.as_bytes());
-            },
+                assert_eq!(
+                    &buf[0..MIDDLE_NEWLINE_SKIPPED.len()],
+                    MIDDLE_NEWLINE_SKIPPED.as_bytes()
+                );
+            }
             Err(_e) => assert!(false),
         };
     }
@@ -98,8 +101,11 @@ mod tests {
         match reader.read(&mut buf) {
             Ok(bytes_read) => {
                 assert_eq!(bytes_read, TRAILING_NEWLINE_SKIPPED.len());
-                assert_eq!(&buf[0..TRAILING_NEWLINE_SKIPPED.len()], TRAILING_NEWLINE_SKIPPED.as_bytes());
-            },
+                assert_eq!(
+                    &buf[0..TRAILING_NEWLINE_SKIPPED.len()],
+                    TRAILING_NEWLINE_SKIPPED.as_bytes()
+                );
+            }
             Err(_e) => assert!(false),
         };
     }
