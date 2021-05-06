@@ -1,3 +1,4 @@
+pub mod cos_sim;
 pub mod io_utils;
 
 use std::array;
@@ -10,8 +11,9 @@ const SORTED_LETTERS: &str = " etaoinshrdlcumwfgypbvkjxqz";
 fn score_string_lev(text: &str) -> Option<f64> {
     let lower = text.to_ascii_lowercase();
     let mut counts: [u16; 128] = [0; 128];
+    // N.B.: this rejects all non-ASCII strings
     for b in lower.bytes() {
-        if b > 127 {
+        if b == 0 || b > 126 || (b < 32 && b != 10 && b != 9 && b != 13) {
             return None;
         }
         counts[b as usize] += 1;
@@ -25,6 +27,10 @@ fn score_string_lev(text: &str) -> Option<f64> {
     let ordered_letters: String = by_freq.iter().rev().map(|(x, _)| x).collect();
     Some(normalized_levenshtein(&ordered_letters, SORTED_LETTERS))
 }
+
+// TODO: make this other score_string work
+// get a table of frequencies from outside instead of this hard-coded one
+// figure out how to measure the difference between two histograms better
 
 // the weight of letters from a to z
 // divide by 10 to get the decimal percentage

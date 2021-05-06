@@ -14,7 +14,7 @@ fn main() {
     file.read_to_string(&mut text).unwrap();
 
     let mut counts: HashMap<char, usize> = HashMap::new();
-    for mut chr in text.chars().flat_map(char::to_lowercase) {
+    for mut chr in text.chars().flat_map(char::to_uppercase) {
         if chr == '\u{2013}' || chr == '\u{2014}' {
             // map all dashes to simple ASCII dashes
             chr = '-';
@@ -22,7 +22,7 @@ fn main() {
             chr = '\'';
         } else if chr == '\u{201c}' || chr == '\u{201d}' {
             chr = '"';
-        } else if chr == '\r' || chr > 'z' {
+        } else if chr == '\r' || chr > '~' {
             // ignoring everything past ASCII
             continue;
         }
@@ -42,4 +42,6 @@ fn main() {
         // println!("\t({}) {}", if chr.is_ascii() { "A" } else { "U" }, cnt);
         println!("\t({}) {}", chr.escape_unicode(), cnt);
     }
+
+    // TODO: write a file with character frequencies (CSV?)
 }
