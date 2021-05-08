@@ -7,6 +7,7 @@ pub enum CharFreqError {
 
 pub struct CharFreq {
     frequencies: [f64; 70],
+    magnitude: f64,
 }
 
 impl CharFreq {
@@ -32,13 +33,16 @@ impl CharFreq {
             frequencies[i] = (*cnt as f64) / len;
         }
 
-        Ok(CharFreq { frequencies })
+        let magnitude = dot_product(&frequencies, &frequencies);
+
+        Ok(CharFreq {
+            frequencies,
+            magnitude,
+        })
     }
 
     pub fn cosine_dist(&self, other: &CharFreq) -> f64 {
-        dot_product(&self.frequencies, &other.frequencies)
-            / (dot_product(&self.frequencies, &self.frequencies)
-                * dot_product(&other.frequencies, &other.frequencies))
+        dot_product(&self.frequencies, &other.frequencies) / (self.magnitude * other.magnitude)
     }
 }
 

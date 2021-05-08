@@ -1,13 +1,15 @@
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 
 fn main() {
-    if env::args().len() != 2 {
+    if env::args().len() != 3 {
         panic!("wrong number of arguments");
     }
-    let filename = env::args().next_back().unwrap();
+    let mut args = env::args();
+    args.next();
+    let filename = args.next().unwrap();
     let mut file = File::open(filename).expect("could not open file");
 
     let mut text = String::new();
@@ -33,15 +35,13 @@ fn main() {
     let mut counts: Vec<(char, usize)> = counts.into_iter().collect();
     counts.sort_by_key(|x| x.0);
 
+    let mut out_file = File::create(args.next().unwrap()).expect("unable to open output file");
+    let mut buf: [u8; 1] = [0];
     for (chr, cnt) in counts {
-        if chr.is_control() {
-            print!("{}", chr.escape_default());
-        } else {
-            print!("'{}'", chr);
-        }
         // println!("\t({}) {}", if chr.is_ascii() { "A" } else { "U" }, cnt);
-        println!("\t({}) {}", chr.escape_unicode(), cnt);
+        println!("{}\t({}) {}", chr.escape_default(), chr.escape_unicode(), cnt);
+        // out_file.write_fmt(format_args!("\"{}\",{}\n", chr.escape_default(), cnt)).unwrap();
+        assert_eq!(chr.encode_utf8(&mut buf).len(), 1);
+        out_file.write_fmt(format_args!("{},{}\n", buf[0], cnt)).unwrap();
     }
-
-    // TODO: write a file with character frequencies (CSV?)
 }
