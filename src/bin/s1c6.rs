@@ -1,20 +1,28 @@
 use std::env;
 use std::fs::File;
-use std::io::Read;
+use std::io::{BufReader, Read};
 
+use cryptopals::cos_sim::CharFreq;
 use cryptopals::io_utils::SkipNewlinesReader;
 use cryptopals::{brute_force_single_byte_xor, hamming_distance, repeating_key_xor};
 
 fn main() {
-    if env::args().len() != 2 {
+    let mut args = env::args();
+    if args.len() != 3 {
         panic!("wrong number of arguments");
     }
-    let filename = env::args().next_back().unwrap();
-    let mut file = File::open(filename).expect("could not open file");
+    args.next(); // skip program name
+    let filename = args.next().unwrap();
+    let mut file = File::open(filename).expect("could not open ciphertext file");
     let mut skip_reader = SkipNewlinesReader::new(&mut file);
     let mut r = base64::read::DecoderReader::new(&mut skip_reader, base64::STANDARD);
     let mut ciphertext: Vec<u8> = Vec::with_capacity(3000);
     r.read_to_end(&mut ciphertext).expect("error decoding file");
+
+    let filename = args.next().unwrap();
+    let file = File::open(filename).expect("could not open CSV file");
+    let mut reader = BufReader::new(file);
+    let ref_freqs = CharFreq::from_csv(&mut reader).expect("could not parse CSV file");
 
     // ciphertext is now ready
 
@@ -49,7 +57,7 @@ fn main() {
     let transposed: Vec<Vec<u8>> = (0..keysize)
         .map(|i| {
             // take every keysize'th char, starting at i
-            ciphertext[i..].iter().cloned().step_by(keysize).collect()
+            ciphertext[i..].iter().copied().step_by(keysize).collect()
         })
         .collect();
 
@@ -58,15 +66,17 @@ fn main() {
     let key: Vec<u8> = transposed
         .iter()
         .map(|block| {
-            let mut results = brute_force_single_byte_xor(block);
-            results.sort_unstable_by(|a, b| a.score.partial_cmp(&b.score).unwrap().reverse());
-            // results.iter().filter(|x| x.key > 31 && x.key < 127).next().unwrap().key
-            results.first().unwrap().key
-            // results.iter().filter(|x| x.plaintext.is_ascii()).next().unwrap().key
+            let mut results = brute_force_single_byte_xor(block, &ref_freqs);
+            results.sort_unstable_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
+            if results.is_empty() {
+                println!("oh shit");
+            }
+            // TODO: some block is getting no values at all
+            results.last().unwrap().key
         })
         .collect();
 
-    println!("{:x?}", key);
+    println!("{:X?}", key);
 
     // For each block, the single-byte XOR key that produces the best looking histogram is the
     // repeating-key XOR key byte for that block. Put them together and you have the key.

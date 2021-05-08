@@ -39,9 +39,16 @@ fn main() {
     let mut buf: [u8; 1] = [0];
     for (chr, cnt) in counts {
         // println!("\t({}) {}", if chr.is_ascii() { "A" } else { "U" }, cnt);
-        println!("{}\t({}) {}", chr.escape_default(), chr.escape_unicode(), cnt);
+        println!(
+            "{}\t({}) {}",
+            chr.escape_default(),
+            chr.escape_unicode(),
+            cnt
+        );
         // out_file.write_fmt(format_args!("\"{}\",{}\n", chr.escape_default(), cnt)).unwrap();
         assert_eq!(chr.encode_utf8(&mut buf).len(), 1);
-        out_file.write_fmt(format_args!("{},{}\n", buf[0], cnt)).unwrap();
+        out_file
+            .write_fmt(format_args!("{},{}\n", buf[0], cnt))
+            .unwrap();
     }
 }
