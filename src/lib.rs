@@ -13,7 +13,7 @@ pub struct BruteForceResult {
 }
 
 fn xor(in_bytes: &[u8], key: u8) -> Vec<u8> {
-    in_bytes.iter().map(|x| *x ^ key).collect()
+    in_bytes.iter().copied().map(|x| x ^ key).collect()
 }
 
 /// Returns possible plaintexts unsorted

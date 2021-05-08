@@ -3,23 +3,31 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
+use cryptopals::cos_sim::CharFreq;
 use cryptopals::{brute_force_single_byte_xor, BruteForceResult};
 
 // We know that the final string will be ASCII. I checked all non-ASCII (but valid UTF-8) strings,
 // and they were all garbage.
 // So we only need to check ASCII strings.
 fn main() {
-    if env::args().len() != 2 {
+    let mut args = env::args();
+    if args.len() != 3 {
         panic!("wrong number of arguments");
     }
-    let filename = env::args().next_back().unwrap();
+    args.next();
+    let filename = args.next().unwrap();
+    let csv_filename = args.next().unwrap();
+    let csv_file = File::open(csv_filename).expect("could not open CSV file");
+    let csv_reader = BufReader::new(csv_file);
+    let ref_reqs = CharFreq::from_csv(csv_reader).expect("could not parse CSV");
+
     let file = File::open(filename).expect("could not open file");
     let reader = BufReader::new(file);
     let mut results: Vec<(usize, BruteForceResult)> = reader
         .lines()
         .enumerate()
         .map(|(no, line)| {
-            brute_force_single_byte_xor(&hex::decode(line.unwrap()).unwrap())
+            brute_force_single_byte_xor(&hex::decode(line.unwrap()).unwrap(), &ref_reqs)
                 .into_iter()
                 .map(move |r| (no, r))
         })
