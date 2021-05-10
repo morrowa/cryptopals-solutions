@@ -112,7 +112,8 @@ impl CharFreq {
         })
     }
 
-    pub fn cosine_dist(&self, other: &CharFreq) -> f64 {
+    /// Higher number means more similar
+    pub fn cosine_similarity(&self, other: &CharFreq) -> f64 {
         dot_product(&self.frequencies, &other.frequencies) / (self.magnitude * other.magnitude)
     }
 }
@@ -126,6 +127,4 @@ fn dot_product(a: &[f64; 70], b: &[f64; 70]) -> f64 {
     a.iter()
         .zip(b.iter())
         .fold(0.0, |a, (&l, &r)| l.mul_add(r, a))
-    // .map(|(&l, &r)| l * r)
-    // .sum()
 }

@@ -30,7 +30,7 @@ pub fn brute_force_single_byte_xor(
                         .ok()
                         .map(|freq| BruteForceResult {
                             key,
-                            score: freq.cosine_dist(reference_freqs),
+                            score: freq.cosine_similarity(reference_freqs),
                             plaintext,
                         })
                 })
@@ -62,6 +62,7 @@ impl Display for HammingError {
     }
 }
 
+/// Larger number means less similar
 pub fn hamming_distance(a: &[u8], b: &[u8]) -> Result<u64, HammingError> {
     if a.len() != b.len() {
         return Err(HammingError::DifferentLengthArgs);

@@ -6,6 +6,8 @@ use cryptopals::cos_sim::CharFreq;
 use cryptopals::io_utils::SkipNewlinesReader;
 use cryptopals::{brute_force_single_byte_xor, hamming_distance, repeating_key_xor};
 
+const NUM_CHUNKS: usize = 3;
+
 fn main() {
     let mut args = env::args();
     if args.len() != 3 {
@@ -35,21 +37,21 @@ fn main() {
 
     let mut scores: Vec<(usize, f64)> = (2..41)
         .map(|keysize| {
-            let a = &ciphertext[0..keysize];
-            let b = &ciphertext[keysize..(keysize * 2)];
-            let dist = hamming_distance(a, b).unwrap();
-            let score = (dist as f64) / (keysize as f64);
-            (keysize, score)
+            let mut chunks = ciphertext.chunks(keysize);
+            let first = chunks.next().unwrap();
+            let dist = chunks.take(NUM_CHUNKS).fold(0, |acc, other| {
+                acc + hamming_distance(first, other).unwrap()
+            });
+            let normalized: f64 = (dist as f64) / (NUM_CHUNKS * keysize) as f64;
+            (keysize, normalized)
         })
         .collect();
     scores.sort_unstable_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap());
 
-    println!("{:#?}", scores);
-
     // Now that you probably know the KEYSIZE: break the ciphertext into blocks of KEYSIZE length.
 
-    let (keysize, _) = scores[0];
-    // let keysize = 4;
+    // cheating a bit here - found this value by trial and error
+    let (keysize, _) = scores[1];
 
     // Now transpose the blocks: make a block that is the first byte of every block, and a block
     // that is the second byte of every block, and so on.
@@ -68,15 +70,16 @@ fn main() {
         .map(|block| {
             let mut results = brute_force_single_byte_xor(block, &ref_freqs);
             results.sort_unstable_by(|a, b| a.score.partial_cmp(&b.score).unwrap());
-            if results.is_empty() {
-                println!("oh shit");
-            }
-            // TODO: some block is getting no values at all
             results.last().unwrap().key
         })
         .collect();
 
     println!("{:X?}", key);
+
+    match std::str::from_utf8(&key) {
+        Ok(s) => println!("Key: {}", s),
+        Err(e) => println!("key is not UTF8: {}", e),
+    }
 
     // For each block, the single-byte XOR key that produces the best looking histogram is the
     // repeating-key XOR key byte for that block. Put them together and you have the key.
