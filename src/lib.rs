@@ -75,6 +75,13 @@ pub fn hamming_distance(a: &[u8], b: &[u8]) -> Result<u64, HammingError> {
     Ok(dist)
 }
 
+pub fn pkcs7_pad(buf: &mut Vec<u8>, len: usize) {
+    let to_add = len - (buf.len() % len);
+    for _ in 0..to_add {
+        buf.push(to_add as u8);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,5 +103,12 @@ mod tests {
         let a = "this is a test";
         let b = "wokka wokka!!!";
         assert_eq!(hamming_distance(a.as_bytes(), b.as_bytes()).unwrap(), 37);
+    }
+
+    #[test]
+    fn test_pkcs7_pad() {
+        let mut input: Vec<u8> = Vec::from(b"YELLOW SUBMARINE".to_owned());
+        pkcs7_pad(&mut input, 20);
+        assert_eq!(input, b"YELLOW SUBMARINE\x04\x04\x04\x04");
     }
 }
