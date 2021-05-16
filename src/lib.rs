@@ -1,5 +1,6 @@
 pub mod cos_sim;
 pub mod io_utils;
+pub mod aes_cbc;
 
 use cos_sim::CharFreq;
 use std::fmt;
